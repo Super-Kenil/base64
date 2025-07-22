@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Free online Base64 image converter tool. Convert images to Base64 strings and preview them instantly.">
+  <meta name="keywords" content="base64 converter, image to base64, base64 to image, online converter, image converter">
+  <meta name="author" content="Super-Kenil">
+  <meta name="email" content="contact@superkenil.com">
+  <meta name="robots" content="index, follow">
+  <meta property="og:title" content="Base64 Image Converter">
+  <meta property="og:description" content="Convert your images to Base64 strings and back with this easy-to-use online tool.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="/cover.webp">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="/favicon.ico">
+  <meta name="twitter:title" content="Base64 Image Converter">
+  <meta name="twitter:description" content="Convert your images to Base64 strings and back with this easy-to-use online tool.">
+  <title>Base64 Converter - Convert Images to Base64 or vise-versa | Super-Kenil</title>
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: min(20px, 4vw);
+      overflow-x: hidden;
+      overflow-y: auto;
+      position: relative;
+      background: linear-gradient(135deg, #a7b7c7, #e0e6ed);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 12px;
+      }
+    }
+
+    .background-blobs {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: -1;
+    }
+
+    .blob-1,
+    .blob-2 {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.7;
+    }
+
+    .blob-1 {
+      top: -20%;
+      left: -20%;
+      width: 60%;
+      height: 60%;
+      background: linear-gradient(135deg, #FF6F61, #DE4335);
+      animation: moveBlob1 15s infinite alternate ease-in-out;
+    }
+
+    .blob-2 {
+      bottom: -20%;
+      right: -20%;
+      width: 50%;
+      height: 50%;
+      background: linear-gradient(45deg, #6B4CFF, #4833D2);
+      animation: moveBlob2 18s infinite alternate ease-in-out;
+    }
+
+    .glass-morphism {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: clamp(12px, 2vw, 15px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+      z-index: 1;
+      margin: clamp(10px, 2vw, 20px);
+      max-width: min(600px, 95vw);
+      width: 100%;
+      padding: clamp(16px, 4vw, 32px) !important;
+    }
+
+    .input-field {
+      background-color: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      color: #333;
+      transition: all 0.2s ease-in-out;
+      font-size: clamp(14px, 1.5vw, 16px);
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-primary {
+      background-color: #4f46e5;
+      color: white;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .btn-primary:hover {
+      background-color: #4338ca;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .preview-area {
+      background-color: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      min-height: 200px;
+      height: clamp(200px, 40vh, 400px);
+      border-radius: 8px;
+    }
+
+    .preview-area img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+      .flex.items-center.space-x-4 {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      #copyButton {
+        width: 100%;
+        margin-left: 0 !important;
+      }
+
+      .text-3xl {
+        font-size: clamp(1.5rem, 5vw, 1.875rem);
+      }
+    }
+
+    .btn-primary {
+      padding: clamp(8px, 2vw, 12px) clamp(16px, 4vw, 24px);
+      font-size: clamp(14px, 1.5vw, 16px);
+      border-radius: 6px;
+      min-width: 120px;
+    }
+
+    @media (min-width: 769px) {
+      .input-container {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 16px;
+        align-items: flex-start;
+      }
+      
+      #copyButton {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+    @keyframes moveBlob1 {
+      0% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      50% {
+        transform: translate(30px, 50px) scale(1.05);
+      }
+
+      100% {
+        transform: translate(0, 0) scale(1);
+      }
+    }
+
+    @keyframes moveBlob2 {
+      0% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      50% {
+        transform: translate(-40px, -20px) scale(1.1);
+      }
+
+      100% {
+        transform: translate(0, 0) scale(1);
+      }
+    }
+  </style>
+</head>
+
+<body class="p-4">
+  <div class="background-blobs">
+    <div class="blob-1"></div>
+    <div class="blob-2"></div>
+  </div>
+
+  <div class="glass-morphism">
+    <h1 class="text-3xl font-semibold text-center mb-8 text-gray-800">Base64 Converter</h1>
+
+    <div class="mb-6">
+      <label for="base64Input" class="block text-sm font-medium text-gray-700 mb-3">Base64 String:</label>
+      <div class="input-container">
+        <textarea id="base64Input" rows="4" class="p-4 rounded-lg input-field w-full shadow-sm" placeholder="Paste Base64 string here..."></textarea>
+        <button id="copyButton" class="rounded-lg btn-primary shadow-sm hover:shadow-md">Copy</button>
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <label class="block text-sm font-medium text-gray-700 mb-2">Preview:</label>
+      <div id="imagePreview" class="w-full h-64 rounded-md preview-area border-dashed border-2 border-gray-300 text-gray-500 flex items-center justify-center text-center">
+        Image preview will appear here
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label for="imageUpload" class="block text-sm font-medium text-gray-700 mb-2">Upload Image:</label>
+      <input type="file" id="imageUpload" accept="image/*" class="hidden">
+      <div class="flex items-center space-x-4">
+        <label for="imageUpload" class="flex-grow px-6 py-3 rounded-md btn-primary text-center cursor-pointer">
+          Choose Image to Convert
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const base64Input = document.getElementById('base64Input');
+    const copyButton = document.getElementById('copyButton');
+    const imagePreview = document.getElementById('imagePreview');
+    const imageUpload = document.getElementById('imageUpload');
+
+    // Function to update image preview from Base64 string
+    function updatePreview(base64String) {
+      if (base64String && (base64String.startsWith('data:image/') || base64String.startsWith('data:application/octet-stream'))) {
+        const img = new Image();
+        img.onload = () => {
+          imagePreview.innerHTML = ''; // Clear previous content
+          imagePreview.appendChild(img);
+        };
+        img.onerror = () => {
+          imagePreview.innerHTML = '<span class="text-red-500">Invalid Base64 image data.</span>';
+        };
+        img.src = base64String;
+      } else {
+        imagePreview.innerHTML = 'Image preview will appear here';
+      }
+    }
+
+    // Listen for input changes in Base64 textarea
+    base64Input.addEventListener('input', (event) => {
+      updatePreview(event.target.value);
+    });
+
+    // Copy Base64 string to clipboard
+    copyButton.addEventListener('click', () => {
+      base64Input.select();
+      document.execCommand('copy');
+      // Provide feedback to the user
+      const originalText = copyButton.textContent;
+      copyButton.textContent = 'Copied!';
+      setTimeout(() => {
+        copyButton.textContent = originalText;
+      }, 1500);
+    });
+
+    // Handle image file upload and convert to Base64
+    imageUpload.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64String = reader.result;
+          base64Input.value = base64String;
+          updatePreview(base64String);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        base64Input.value = '';
+        updatePreview('');
+      }
+    });
+  </script>
+</body>
+
+</html>
