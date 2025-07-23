@@ -172,7 +172,7 @@
         gap: 16px;
         align-items: flex-start;
       }
-      
+
       #copyButton {
         height: 100%;
         display: flex;
@@ -252,41 +252,90 @@
     const imagePreview = document.getElementById('imagePreview');
     const imageUpload = document.getElementById('imageUpload');
 
-    // Function to update image preview from Base64 string
+    function formatBase64String(base64String) {
+      if (!base64String) return '';
+      let cleanBase64 = base64String.replace(/^data:image\/[a-z]+;base64,/, '');
+      cleanBase64 = cleanBase64.replace(/\s/g, '');
+
+      const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+      if (!base64Regex.test(cleanBase64)) {
+        return base64String
+      }
+
+      if (!base64String.startsWith('data:image/')) {
+        const header = atob(cleanBase64.slice(0, 8));
+        let imageType = 'png';
+
+        if (header.startsWith('\xFF\xD8\xFF')) imageType = 'jpeg';
+        else if (header.startsWith('GIF8')) imageType = 'gif';
+        else if (header.startsWith('\x89PNG\r\n\x1A\n')) imageType = 'png';
+        else if (header.startsWith('RIFF') && header.slice(8, 12) === 'WEBP') imageType = 'webp';
+
+        return `data:image/${imageType};base64,${cleanBase64}`;
+      }
+
+      return base64String;
+    }
+
     function updatePreview(base64String) {
-      if (base64String && (base64String.startsWith('data:image/') || base64String.startsWith('data:application/octet-stream'))) {
+      if (!base64String) {
+        imagePreview.innerHTML = 'Image preview will appear here';
+        return;
+      }
+
+      const formattedBase64 = formatBase64String(base64String);
+      if (formattedBase64.startsWith('data:image/')) {
         const img = new Image();
         img.onload = () => {
-          imagePreview.innerHTML = ''; // Clear previous content
+          imagePreview.innerHTML = '';
           imagePreview.appendChild(img);
+          if (base64String !== formattedBase64) {
+            base64Input.value = formattedBase64;
+          }
         };
         img.onerror = () => {
           imagePreview.innerHTML = '<span class="text-red-500">Invalid Base64 image data.</span>';
         };
-        img.src = base64String;
+        img.src = formattedBase64;
       } else {
         imagePreview.innerHTML = 'Image preview will appear here';
       }
     }
 
-    // Listen for input changes in Base64 textarea
     base64Input.addEventListener('input', (event) => {
       updatePreview(event.target.value);
     });
 
-    // Copy Base64 string to clipboard
     copyButton.addEventListener('click', () => {
-      base64Input.select();
-      document.execCommand('copy');
-      // Provide feedback to the user
-      const originalText = copyButton.textContent;
-      copyButton.textContent = 'Copied!';
-      setTimeout(() => {
-        copyButton.textContent = originalText;
-      }, 1500);
+      const formattedValue = formatBase64String(base64Input.value);
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(formattedValue)
+          .then(() => {
+            copyButton.textContent = 'Copied!';
+            setTimeout(() => {
+              copyButton.textContent = 'Copy';
+            }, 1500);
+          })
+          .catch(() => fallbackCopy());
+      } else {
+        fallbackCopy();
+      }
     });
 
-    // Handle image file upload and convert to Base64
+    function fallbackCopy() {
+      base64Input.select();
+      try {
+        document.execCommand('copy');
+        copyButton.textContent = 'Copied!';
+      } catch (err) {
+        copyButton.textContent = 'Failed to copy';
+      }
+      setTimeout(() => {
+        copyButton.textContent = 'Copy';
+      }, 1500);
+    };
+
     imageUpload.addEventListener('change', (event) => {
       const file = event.target.files[0];
       if (file) {
