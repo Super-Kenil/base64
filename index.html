@@ -32,6 +32,63 @@
       padding: 0;
     }
 
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      overflow: hidden;
+    }
+
+    .modal-content {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal img {
+      max-width: 90%;
+      max-height: 90vh;
+      object-fit: contain;
+      cursor: zoom-in;
+      transition: transform 0.3s ease;
+    }
+
+    .modal img.zoomed {
+      cursor: zoom-out;
+      transform: scale(1.5);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      color: white;
+      font-size: 30px;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.5);
+      width: 40px;
+      height: 40px;
+      padding-bottom: 8px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s ease;
+    }
+
+    .modal-close:hover {
+      background: rgba(0, 0, 0, 0.8);
+    }
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
@@ -223,6 +280,14 @@
     <div class="blob-2"></div>
   </div>
 
+  <!-- Image Modal -->
+  <div id="imageModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close">&times;</span>
+      <img id="modalImage" src="" alt="Expanded view">
+    </div>
+  </div>
+
   <div class="glass-morphism">
     <h1 class="text-3xl font-semibold text-center mb-8 text-gray-800">Base64 Converter</h1>
 
@@ -230,7 +295,10 @@
       <label for="base64Input" class="block text-sm font-medium text-gray-700 mb-3">Base64 String:</label>
       <div class="input-container">
         <textarea id="base64Input" rows="4" class="p-4 rounded-lg input-field w-full shadow-sm" placeholder="Paste Base64 string here..."></textarea>
-        <button id="copyButton" class="rounded-lg btn-primary shadow-sm hover:shadow-md">Copy</button>
+        <div class='flex gap-2 flex-col'>
+          <button id="copyButton" class="rounded-lg btn-primary shadow-sm hover:shadow-md">Copy</button>
+          <button id="clearButton" class="rounded-lg btn-primary shadow-sm hover:shadow-md">Clear</button>
+        </div>
       </div>
     </div>
 
@@ -255,8 +323,12 @@
   <script>
     const base64Input = document.getElementById('base64Input');
     const copyButton = document.getElementById('copyButton');
+    const clearButton = document.getElementById('clearButton');
     const imagePreview = document.getElementById('imagePreview');
     const imageUpload = document.getElementById('imageUpload');
+    const imageModal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalClose = document.querySelector('.modal-close');
 
     function formatBase64String(base64String) {
       if (!base64String) return '';
@@ -294,6 +366,8 @@
         const img = new Image();
         img.onload = () => {
           imagePreview.innerHTML = '';
+          img.style.cursor = 'pointer';
+          img.addEventListener('click', () => openModal(formattedBase64));
           imagePreview.appendChild(img);
           if (base64String !== formattedBase64) {
             base64Input.value = formattedBase64;
@@ -307,6 +381,45 @@
         imagePreview.innerHTML = 'Image preview will appear here';
       }
     }
+
+    // Modal functions
+    function openModal(imageSrc) {
+      imageModal.style.display = 'block';
+      modalImage.src = imageSrc;
+      document.body.style.overflow = 'hidden'; // Prevent scrolling when modal is open
+    }
+
+    function closeModal() {
+      imageModal.style.display = 'none';
+      modalImage.src = '';
+      document.body.style.overflow = 'auto';
+      modalImage.classList.remove('zoomed');
+    }
+
+    // Modal event listeners
+    modalClose.addEventListener('click', closeModal);
+    imageModal.addEventListener('click', (e) => {
+      if (e.target === imageModal) closeModal();
+    });
+
+    modalImage.addEventListener('click', (e) => {
+      e.stopPropagation();
+      modalImage.classList.toggle('zoomed');
+    });
+
+    // Clear button functionality
+    clearButton.addEventListener('click', () => {
+      base64Input.value = '';
+      updatePreview('');
+      base64Input.focus();
+    });
+
+    // Escape key to close modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && imageModal.style.display === 'block') {
+        closeModal();
+      }
+    });
 
     base64Input.addEventListener('input', (event) => {
       updatePreview(event.target.value);
